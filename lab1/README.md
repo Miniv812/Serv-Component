@@ -27,7 +27,16 @@
 
 ## Скріншоти результатів
 
-<img width="674" height="162" alt="{267D5716-6914-4222-86D0-7F66090295C5}" src="https://github.com/user-attachments/assets/3b7579da-ffd1-417e-8d5f-7fec26528f68" /> <img width="760" height="195" alt="{B3CEECD8-E9BC-41E9-B7E2-C8C642B00669}" src="https://github.com/user-attachments/assets/4df7dc6e-ed0f-47c6-970b-59a5b4921b1c" />
+<img width="674" height="162" alt="{267D5716-6914-4222-86D0-7F66090295C5}" src="https://github.com/user-attachments/assets/3b7579da-ffd1-417e-8d5f-7fec26528f68" /> 
+
+<img width="760" height="195" alt="{B3CEECD8-E9BC-41E9-B7E2-C8C642B00669}" src="https://github.com/user-attachments/assets/4df7dc6e-ed0f-47c6-970b-59a5b4921b1c" />
+
  — перевірка відповідей `/healthz/live` та `/healthz/ready`.
-- `screenshots/docker.png` — збірка та запуск контейнера через `docker compose up --build`.
-- `screenshots/ci.png` — успішне проходження пайплайну в GitHub Actions.
+
+<img width="1292" height="87" alt="{FBF53508-B14C-43AB-857A-5D9210944BD8}" src="https://github.com/user-attachments/assets/704365aa-1317-499c-b15a-980e6bd36b68" />
+
+ — збірка та запуск контейнера через `docker compose up --build`.
+
+
+ 
+ — успішне проходження пайплайну в GitHub Actions.
