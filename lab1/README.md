@@ -37,6 +37,6 @@
 
  — збірка та запуск контейнера через `docker compose up --build`.
 
+<img width="1902" height="550" alt="{F729A35B-236B-4477-BAE8-EF52034309F9}" src="https://github.com/user-attachments/assets/9be82d81-62ef-474f-ab70-e6c1b5b9ac1d" />
 
- 
- — успішне проходження пайплайну в GitHub Actions.
+  — успішне проходження пайплайну в GitHub Actions.
