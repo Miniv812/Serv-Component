@@ -1,17 +1,22 @@
-from decimal import Decimal, InvalidOperation
-
 from flask import Blueprint, Response, jsonify, request
+from marshmallow import ValidationError
 
-from app.storage import storage
+from app.extensions import db
+from app.models import AccountModel, CategoryModel, RecordModel, UserModel
+from app.schemas import RecordCreateSchema, RecordDTOSchema, RecordFilterSchema
 
 records_bp = Blueprint("records", __name__)
+record_create_schema = RecordCreateSchema()
+record_filter_schema = RecordFilterSchema()
+record_dto_schema = RecordDTOSchema()
+records_dto_schema = RecordDTOSchema(many=True)
 
 
 @records_bp.route("/record", methods=["POST"])
 def create_record() -> tuple[Response, int]:
-    """Створення нового запису витрати."""
-    data = request.get_json(silent=True)
-    if not isinstance(data, dict):
+    """Створення витрати з автоматичним списанням з рахунку (Варіант 3)."""
+    payload = request.get_json(silent=True)
+    if not isinstance(payload, dict):
         return (
             jsonify(
                 {
@@ -22,103 +27,65 @@ def create_record() -> tuple[Response, int]:
             400,
         )
 
-    user_id = data.get("user_id")
-    category_id = data.get("category_id")
-    raw_amount = data.get("amount")
-
-    if isinstance(user_id, bool) or not isinstance(user_id, int):
-        return (
-            jsonify(
-                {
-                    "error": "validation_error",
-                    "message": "Field 'user_id' is required and must be an integer",
-                }
-            ),
-            400,
-        )
-
-    if isinstance(category_id, bool) or not isinstance(category_id, int):
-        return (
-            jsonify(
-                {
-                    "error": "validation_error",
-                    "message": (
-                        "Field 'category_id' is required and must be an integer"
-                    ),
-                }
-            ),
-            400,
-        )
-
-    if isinstance(raw_amount, bool) or not isinstance(raw_amount, (int, float, str)):
-        return (
-            jsonify(
-                {
-                    "error": "validation_error",
-                    "message": "Field 'amount' is required and must be a number",
-                }
-            ),
-            400,
-        )
-
     try:
-        amount = Decimal(str(raw_amount))
-    except InvalidOperation:
-        return (
-            jsonify(
-                {
-                    "error": "validation_error",
-                    "message": "Field 'amount' must be a valid decimal number",
-                }
-            ),
-            400,
-        )
+        data = record_create_schema.load(payload)
+    except ValidationError as err:
+        return jsonify({"error": "validation_error", "messages": err.messages}), 400
 
-    if not amount.is_finite() or amount <= 0:
-        return (
-            jsonify(
-                {
-                    "error": "validation_error",
-                    "message": "Field 'amount' must be greater than 0",
-                }
-            ),
-            400,
-        )
-
-    if storage.get_user(user_id) is None:
+    user = db.session.get(UserModel, data["user_id"])
+    if user is None:
         return (
             jsonify(
                 {
                     "error": "not_found",
-                    "message": f"User with id {user_id} not found",
+                    "message": f"User with id {data['user_id']} not found",
                 }
             ),
             404,
         )
 
-    if storage.get_category(category_id) is None:
+    category = db.session.get(CategoryModel, data["category_id"])
+    if category is None:
         return (
             jsonify(
                 {
                     "error": "not_found",
-                    "message": f"Category with id {category_id} not found",
+                    "message": f"Category with id {data['category_id']} not found",
                 }
             ),
             404,
         )
 
-    record = storage.create_record(
-        user_id=user_id,
-        category_id=category_id,
-        amount=amount,
+    account = AccountModel.query.filter_by(user_id=data["user_id"]).first()
+    if account is None or account.balance < data["amount"]:
+        return (
+            jsonify(
+                {
+                    "error": "insufficient_funds",
+                    "message": "Insufficient account balance or account not found",
+                }
+            ),
+            400,
+        )
+
+    account.balance -= data["amount"]
+    record = RecordModel(
+        user_id=data["user_id"],
+        category_id=data["category_id"],
+        amount=data["amount"],
     )
-    return jsonify(record), 201
+    db.session.add(record)
+    db.session.commit()
+
+    response_data = record_dto_schema.dump(record)
+    response_data["remaining_balance"] = float(account.balance)
+    return jsonify(response_data), 201
 
 
 @records_bp.route("/record/<int:record_id>", methods=["GET"])
 def get_record(record_id: int) -> tuple[Response, int]:
     """Отримання запису витрати за ідентифікатором."""
-    record = storage.get_record(record_id)
+    record = db.session.get(RecordModel, record_id)
     if record is None:
         return (
             jsonify(
@@ -129,14 +96,14 @@ def get_record(record_id: int) -> tuple[Response, int]:
             ),
             404,
         )
-    return jsonify(record), 200
+    return jsonify(record_dto_schema.dump(record)), 200
 
 
 @records_bp.route("/record/<int:record_id>", methods=["DELETE"])
 def delete_record(record_id: int) -> tuple[Response | str, int]:
     """Видалення запису витрати за ідентифікатором."""
-    deleted = storage.delete_record(record_id)
-    if not deleted:
+    record = db.session.get(RecordModel, record_id)
+    if record is None:
         return (
             jsonify(
                 {
@@ -146,16 +113,16 @@ def delete_record(record_id: int) -> tuple[Response | str, int]:
             ),
             404,
         )
+
+    db.session.delete(record)
+    db.session.commit()
     return "", 204
 
 
 @records_bp.route("/record", methods=["GET"])
 def get_records() -> tuple[Response, int]:
     """Фільтрація записів витрат за user_id та/або category_id."""
-    raw_user_id = request.args.get("user_id")
-    raw_category_id = request.args.get("category_id")
-
-    if raw_user_id is None and raw_category_id is None:
+    if not request.args:
         return (
             jsonify(
                 {
@@ -169,38 +136,16 @@ def get_records() -> tuple[Response, int]:
             400,
         )
 
-    user_id: int | None = None
-    category_id: int | None = None
+    try:
+        filters = record_filter_schema.load(request.args.to_dict())
+    except ValidationError as err:
+        return jsonify({"error": "validation_error", "messages": err.messages}), 400
 
-    if raw_user_id is not None:
-        try:
-            user_id = int(raw_user_id)
-        except ValueError:
-            return (
-                jsonify(
-                    {
-                        "error": "validation_error",
-                        "message": "Query parameter 'user_id' must be an integer",
-                    }
-                ),
-                400,
-            )
+    query = RecordModel.query
+    if "user_id" in filters:
+        query = query.filter_by(user_id=filters["user_id"])
+    if "category_id" in filters:
+        query = query.filter_by(category_id=filters["category_id"])
 
-    if raw_category_id is not None:
-        try:
-            category_id = int(raw_category_id)
-        except ValueError:
-            return (
-                jsonify(
-                    {
-                        "error": "validation_error",
-                        "message": (
-                            "Query parameter 'category_id' must be an integer"
-                        ),
-                    }
-                ),
-                400,
-            )
-
-    records = storage.filter_records(user_id=user_id, category_id=category_id)
-    return jsonify(records), 200
+    records = query.order_by(RecordModel.id).all()
+    return jsonify(records_dto_schema.dump(records)), 200
