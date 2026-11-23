@@ -8,18 +8,25 @@
 Serv-Component/
 ├── .github/
 │   └── workflows/
-│       └── ci.yml          # GitHub Actions CI (лінтинг, збірка образу, перевірка compose)
+│       └── ci.yml                  # GitHub Actions CI (лінтинг, збірка образу, перевірка compose)
 ├── app/
-│   ├── __init__.py         # Фабрика Flask-застосунку
-│   └── views.py            # Маршрути API
-├── lab1/                   # Звіт та скріншоти виконання Лабораторної роботи №1
-├── .dockerignore           # Виключення файлів при збірці Docker-образу
-├── .gitignore              # Виключення службових файлів для Git
-├── Dockerfile              # Конфігурація збірки контейнера застосунку
-├── docker-compose.yaml     # Оркестрація сервісів для локального запуску
-├── pyproject.toml          # Налаштування лінтера ruff
-├── requirements.txt        # Зафіксовані залежності Python
-└── run.py                  # Точка входу для запуску сервера
+│   ├── __init__.py                 # Фабрика Flask-застосунку та реєстрація Blueprints
+│   ├── storage.py                  # In-Memory сховище сутностей User, Category, Record
+│   ├── views.py                    # Системні ендпоінти Healthcheck (/healthz/live, /healthz/ready)
+│   └── resources/
+│       ├── users.py                # REST API для сутності User
+│       ├── categories.py           # REST API для сутності Category
+│       └── records.py              # REST API та фільтрація для сутності Record
+├── bruno_collection/               # Колекція API-запитів у форматі Bruno OpenCollection
+├── lab1/                           # Звіт та скріншоти виконання Лабораторної роботи №1
+├── lab2/                           # Звіт та скріншоти виконання Лабораторної роботи №2
+├── .dockerignore                   # Виключення файлів при збірці Docker-образу
+├── .gitignore                      # Виключення службових файлів для Git
+├── Dockerfile                      # Конфігурація збірки контейнера застосунку
+├── docker-compose.yaml             # Оркестрація сервісів для локального запуску
+├── pyproject.toml                  # Налаштування лінтера ruff
+├── requirements.txt                # Зафіксовані залежності Python
+└── run.py                          # Точка входу для запуску сервера
 ```
 
 ## Локальний запуск через Docker Compose
