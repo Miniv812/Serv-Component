@@ -23,7 +23,7 @@ services:
       dockerfile: Dockerfile
     container_name: expense-app
     environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER:-expense_user}:${POSTGRES_PASSWORD:-expense_pass}@db:5432/${POSTGRES_DB:-expense_db}
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-expense_user}:${POSTGRES_PASSWORD:-expense_pass}@db:5432/${POSTGRES_DB:-expense_db}
     ports:
       - "8080:8080"
     depends_on:
