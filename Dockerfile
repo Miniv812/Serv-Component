@@ -12,6 +12,7 @@ RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
 COPY app/ ./app/
+COPY migrations/ ./migrations/
 COPY run.py .
 
 RUN chown -R appuser:appuser /app
@@ -19,4 +20,4 @@ USER appuser
 
 EXPOSE 8080
 
-CMD ["python", "run.py"]
+CMD ["sh", "-c", "flask --app run db upgrade && python run.py"]
