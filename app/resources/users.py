@@ -1,20 +1,27 @@
 from flask import Blueprint, Response, jsonify, request
+from marshmallow import ValidationError
 
-from app.storage import storage
+from app.extensions import db
+from app.models import UserModel
+from app.schemas import UserCreateSchema, UserDTOSchema
 
 users_bp = Blueprint("users", __name__)
+user_create_schema = UserCreateSchema()
+user_dto_schema = UserDTOSchema()
+users_dto_schema = UserDTOSchema(many=True)
 
 
 @users_bp.route("/users", methods=["GET"])
 def get_users() -> tuple[Response, int]:
-    """Отримання списку всіх користувачів."""
-    return jsonify(storage.get_all_users()), 200
+    """Отримання списку всіх користувачів із БД."""
+    users = UserModel.query.order_by(UserModel.id).all()
+    return jsonify(users_dto_schema.dump(users)), 200
 
 
 @users_bp.route("/user/<int:user_id>", methods=["GET"])
 def get_user(user_id: int) -> tuple[Response, int]:
     """Отримання користувача за ідентифікатором."""
-    user = storage.get_user(user_id)
+    user = db.session.get(UserModel, user_id)
     if user is None:
         return (
             jsonify(
@@ -25,14 +32,14 @@ def get_user(user_id: int) -> tuple[Response, int]:
             ),
             404,
         )
-    return jsonify(user), 200
+    return jsonify(user_dto_schema.dump(user)), 200
 
 
 @users_bp.route("/user", methods=["POST"])
 def create_user() -> tuple[Response, int]:
-    """Створення нового користувача."""
-    data = request.get_json(silent=True)
-    if not isinstance(data, dict):
+    """Створення нового користувача з валідацією через Marshmallow."""
+    payload = request.get_json(silent=True)
+    if not isinstance(payload, dict):
         return (
             jsonify(
                 {
@@ -43,29 +50,34 @@ def create_user() -> tuple[Response, int]:
             400,
         )
 
-    name = data.get("name")
-    if not isinstance(name, str) or not name.strip():
+    try:
+        data = user_create_schema.load(payload)
+    except ValidationError as err:
+        return jsonify({"error": "validation_error", "messages": err.messages}), 400
+
+    name = data["name"].strip()
+    if not name:
         return (
             jsonify(
                 {
                     "error": "validation_error",
-                    "message": (
-                        "Field 'name' is required and must be a non-empty string"
-                    ),
+                    "messages": {"name": ["Name cannot be blank."]},
                 }
             ),
             400,
         )
 
-    user = storage.create_user(name=name.strip())
-    return jsonify(user), 201
+    user = UserModel(name=name)
+    db.session.add(user)
+    db.session.commit()
+    return jsonify(user_dto_schema.dump(user)), 201
 
 
 @users_bp.route("/user/<int:user_id>", methods=["DELETE"])
 def delete_user(user_id: int) -> tuple[Response | str, int]:
     """Видалення користувача за ідентифікатором."""
-    deleted = storage.delete_user(user_id)
-    if not deleted:
+    user = db.session.get(UserModel, user_id)
+    if user is None:
         return (
             jsonify(
                 {
@@ -75,4 +87,7 @@ def delete_user(user_id: int) -> tuple[Response | str, int]:
             ),
             404,
         )
+
+    db.session.delete(user)
+    db.session.commit()
     return "", 204
