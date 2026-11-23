@@ -1,0 +1,19 @@
+meta {
+  name: Create Record (Insufficient Funds)
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{baseUrl}}/record
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "user_id": 1,
+    "category_id": 1,
+    "amount": 99999.00
+  }
+}
