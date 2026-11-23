@@ -22,13 +22,15 @@
 ## Скріншоти результатів
 
 ### 1. Готовність сервісу та підключення до PostgreSQL (`GET /healthz/ready`)
-
+<img width="974" height="250" alt="изображение" src="https://github.com/user-attachments/assets/db3bd5b4-0046-456f-b07b-aff53e9d09a1" />
 
 ### 2. Створення та поповнення рахунку користувача (`POST /account`, `POST /account/<id>/deposit`)
-
+<img width="974" height="217" alt="изображение" src="https://github.com/user-attachments/assets/0035cd77-9a46-47bf-bd24-444ddc742bed" />
+<img width="974" height="211" alt="изображение" src="https://github.com/user-attachments/assets/3b5186e9-9007-4f4f-a4b5-c3530532d419" />
 
 ### 3. Створення витрати з автоматичним списанням коштів (`POST /record`)
-
+<img width="974" height="248" alt="изображение" src="https://github.com/user-attachments/assets/26b1d3ea-a6c4-4e96-971a-7131254c9fdd" />
 
 ### 4. Валідація нестачі коштів на рахунку (`400 Bad Request — insufficient_funds`)
+<img width="974" height="229" alt="изображение" src="https://github.com/user-attachments/assets/a2d9996a-5657-48e3-8c76-a8d36b7797e5" />
 
