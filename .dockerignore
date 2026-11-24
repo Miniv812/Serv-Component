@@ -10,3 +10,4 @@ __pycache__
 README.md
 lab*/
 bruno_collection/
+tests/
