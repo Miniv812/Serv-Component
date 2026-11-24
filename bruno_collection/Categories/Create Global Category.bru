@@ -1,0 +1,21 @@
+meta {
+  name: Create Global Category
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{baseUrl}}/category/global
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+body:json {
+  {
+    "name": "Транспорт"
+  }
+}

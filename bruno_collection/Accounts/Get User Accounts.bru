@@ -7,5 +7,9 @@ meta {
 get {
   url: {{baseUrl}}/user/1/accounts
   body: none
-  auth: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
 }
