@@ -1,6 +1,8 @@
 from flask import Blueprint, Response, jsonify, request
+from flask_jwt_extended import jwt_required
 from marshmallow import ValidationError
 
+from app.auth import get_current_user_id, get_current_user_roles, roles_required
 from app.extensions import db
 from app.models import AccountModel, CategoryModel, RecordModel, UserModel
 from app.schemas import RecordCreateSchema, RecordDTOSchema, RecordFilterSchema
@@ -13,8 +15,9 @@ records_dto_schema = RecordDTOSchema(many=True)
 
 
 @records_bp.route("/record", methods=["POST"])
+@roles_required("user", "admin")
 def create_record() -> tuple[Response, int]:
-    """Створення витрати з автоматичним списанням з рахунку (Варіант 3)."""
+    """Створення витрати з RBAC та списанням з рахунку (Варіант 3)."""
     payload = request.get_json(silent=True)
     if not isinstance(payload, dict):
         return (
@@ -32,13 +35,31 @@ def create_record() -> tuple[Response, int]:
     except ValidationError as err:
         return jsonify({"error": "validation_error", "messages": err.messages}), 400
 
-    user = db.session.get(UserModel, data["user_id"])
+    roles = get_current_user_roles()
+    current_user_id = get_current_user_id()
+
+    if "admin" in roles and "user_id" in data:
+        target_user_id = data["user_id"]
+    else:
+        if "user_id" in data and data["user_id"] != current_user_id:
+            return (
+                jsonify(
+                    {
+                        "error": "forbidden",
+                        "message": "Cannot create expense record for another user",
+                    }
+                ),
+                403,
+            )
+        target_user_id = current_user_id
+
+    user = db.session.get(UserModel, target_user_id)
     if user is None:
         return (
             jsonify(
                 {
                     "error": "not_found",
-                    "message": f"User with id {data['user_id']} not found",
+                    "message": f"User with id {target_user_id} not found",
                 }
             ),
             404,
@@ -56,7 +77,22 @@ def create_record() -> tuple[Response, int]:
             404,
         )
 
-    account = AccountModel.query.filter_by(user_id=data["user_id"]).first()
+    if (
+        "admin" not in roles
+        and category.user_id is not None
+        and category.user_id != target_user_id
+    ):
+        return (
+            jsonify(
+                {
+                    "error": "not_found",
+                    "message": f"Category with id {data['category_id']} not found",
+                }
+            ),
+            404,
+        )
+
+    account = AccountModel.query.filter_by(user_id=target_user_id).first()
     if account is None or account.balance < data["amount"]:
         return (
             jsonify(
@@ -70,7 +106,7 @@ def create_record() -> tuple[Response, int]:
 
     account.balance -= data["amount"]
     record = RecordModel(
-        user_id=data["user_id"],
+        user_id=target_user_id,
         category_id=data["category_id"],
         amount=data["amount"],
     )
@@ -83,8 +119,9 @@ def create_record() -> tuple[Response, int]:
 
 
 @records_bp.route("/record/<int:record_id>", methods=["GET"])
+@jwt_required()
 def get_record(record_id: int) -> tuple[Response, int]:
-    """Отримання запису витрати за ідентифікатором."""
+    """Отримання запису витрати: user — лише свій, auditor/admin — будь-який."""
     record = db.session.get(RecordModel, record_id)
     if record is None:
         return (
@@ -96,14 +133,41 @@ def get_record(record_id: int) -> tuple[Response, int]:
             ),
             404,
         )
+
+    roles = get_current_user_roles()
+    if "admin" not in roles and "auditor" not in roles:
+        if record.user_id != get_current_user_id():
+            return (
+                jsonify(
+                    {
+                        "error": "not_found",
+                        "message": f"Record with id {record_id} not found",
+                    }
+                ),
+                404,
+            )
+
     return jsonify(record_dto_schema.dump(record)), 200
 
 
 @records_bp.route("/record/<int:record_id>", methods=["DELETE"])
+@roles_required("user", "admin")
 def delete_record(record_id: int) -> tuple[Response | str, int]:
-    """Видалення запису витрати за ідентифікатором."""
+    """Видалення витрати: user — лише власну, admin — будь-яку."""
     record = db.session.get(RecordModel, record_id)
     if record is None:
+        return (
+            jsonify(
+                {
+                    "error": "not_found",
+                    "message": f"Record with id {record_id} not found",
+                }
+            ),
+            404,
+        )
+
+    roles = get_current_user_roles()
+    if "admin" not in roles and record.user_id != get_current_user_id():
         return (
             jsonify(
                 {
@@ -120,8 +184,9 @@ def delete_record(record_id: int) -> tuple[Response | str, int]:
 
 
 @records_bp.route("/record", methods=["GET"])
+@jwt_required()
 def get_records() -> tuple[Response, int]:
-    """Фільтрація записів витрат за user_id та/або category_id."""
+    """Фільтрація витрат: user — лише за своїм user_id; auditor/admin — за всіма."""
     if not request.args:
         return (
             jsonify(
@@ -141,9 +206,25 @@ def get_records() -> tuple[Response, int]:
     except ValidationError as err:
         return jsonify({"error": "validation_error", "messages": err.messages}), 400
 
+    roles = get_current_user_roles()
+    current_user_id = get_current_user_id()
+
     query = RecordModel.query
-    if "user_id" in filters:
+    if "admin" not in roles and "auditor" not in roles:
+        if "user_id" in filters and filters["user_id"] != current_user_id:
+            return (
+                jsonify(
+                    {
+                        "error": "forbidden",
+                        "message": "Access denied: can only filter own records",
+                    }
+                ),
+                403,
+            )
+        query = query.filter_by(user_id=current_user_id)
+    elif "user_id" in filters:
         query = query.filter_by(user_id=filters["user_id"])
+
     if "category_id" in filters:
         query = query.filter_by(category_id=filters["category_id"])
 

@@ -3,7 +3,7 @@ from functools import wraps
 from typing import Any
 
 from flask import jsonify
-from flask_jwt_extended import JWTManager, get_jwt, jwt_required
+from flask_jwt_extended import JWTManager, get_jwt, get_jwt_identity, jwt_required
 from passlib.hash import argon2
 
 
@@ -17,6 +17,16 @@ def verify_password(password: str, hashed: str) -> bool:
     return argon2.verify(password, hashed)
 
 
+def get_current_user_id() -> int:
+    """Повертає цілочисельний ID поточного користувача з JWT."""
+    return int(get_jwt_identity())
+
+
+def get_current_user_roles() -> list[str]:
+    """Повертає список ролей поточного користувача з JWT Claims."""
+    return get_jwt().get("roles", [])
+
+
 def roles_required(*required_roles: str) -> Callable:
     """Декоратор перевірки ролей доступу користувача (RBAC)."""
 
@@ -24,8 +34,7 @@ def roles_required(*required_roles: str) -> Callable:
         @wraps(fn)
         @jwt_required()
         def wrapper(*args: Any, **kwargs: Any) -> Any:
-            claims = get_jwt()
-            user_roles = claims.get("roles", [])
+            user_roles = get_current_user_roles()
 
             if not any(role in user_roles for role in required_roles):
                 return (
