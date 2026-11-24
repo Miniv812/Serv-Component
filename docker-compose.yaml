@@ -35,6 +35,56 @@ services:
       retries: 5
     restart: unless-stopped
 
+  jaeger:
+    image: jaegertracing/all-in-one:1.54
+    container_name: jaeger
+    ports:
+      - "16686:16686"
+      - "14250:14250"
+    restart: unless-stopped
+
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.91.0
+    container_name: otel-collector
+    command: ["--config=/etc/otel-collector-config.yaml"]
+    volumes:
+      - ./monitoring/otel-collector-config.yaml:/etc/otel-collector-config.yaml
+    ports:
+      - "4317:4317"
+      - "4318:4318"
+      - "8889:8889"
+    depends_on:
+      - jaeger
+    restart: unless-stopped
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+    depends_on:
+      - otel-collector
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./monitoring/grafana/provisioning/datasources:/etc/grafana/provisioning/datasources
+      - ./monitoring/grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards
+      - ./monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards/json_dashboards
+    depends_on:
+      - prometheus
+      - jaeger
+    restart: unless-stopped
+
   user-service:
     build:
       context: .
@@ -43,12 +93,15 @@ services:
     environment:
       USER_DATABASE_URL: postgresql+psycopg://${USER_DB_USER:-user_svc}:${USER_DB_PASSWORD:-user_pass}@user-db:5432/${USER_DB_NAME:-user_db}
       JWT_SECRET_KEY: ${JWT_SECRET_KEY:-super-secret-jwt-key-change-in-production}
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
     ports:
       - "8081:8081"
       - "50051:50051"
     depends_on:
       user-db:
         condition: service_healthy
+      otel-collector:
+        condition: service_started
     restart: unless-stopped
 
   expense-service:
@@ -60,12 +113,15 @@ services:
       EXPENSE_DATABASE_URL: postgresql+psycopg://${EXPENSE_DB_USER:-expense_svc}:${EXPENSE_DB_PASSWORD:-expense_pass}@expense-db:5432/${EXPENSE_DB_NAME:-expense_db}
       JWT_SECRET_KEY: ${JWT_SECRET_KEY:-super-secret-jwt-key-change-in-production}
       USER_SERVICE_GRPC_ADDR: user-service:50051
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
     ports:
       - "8080:8080"
     depends_on:
       expense-db:
         condition: service_healthy
       user-service:
+        condition: service_started
+      otel-collector:
         condition: service_started
     restart: unless-stopped
 
