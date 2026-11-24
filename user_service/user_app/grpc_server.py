@@ -8,6 +8,7 @@ from flask import Flask
 from flask_jwt_extended import decode_token
 from grpc_reflection.v1alpha import reflection
 
+from observability.telemetry import instrument_grpc_server
 from proto import auth_pb2, auth_pb2_grpc
 from user_app.extensions import db
 from user_app.interceptors import RBACServerInterceptor
@@ -29,6 +30,7 @@ class AuthServicer(auth_pb2_grpc.AuthServiceServicer):
     ) -> auth_pb2.ValidateTokenResponse:
         raw_token = request.token.removeprefix("Bearer ").strip()
         if not raw_token:
+            logger.warning("gRPC ValidateToken called with empty token")
             return auth_pb2.ValidateTokenResponse(is_valid=False)
 
         with self.app.app_context():
@@ -36,12 +38,15 @@ class AuthServicer(auth_pb2_grpc.AuthServiceServicer):
                 decoded = decode_token(raw_token)
                 user_id = int(decoded["sub"])
             except Exception:
+                logger.warning("gRPC ValidateToken failed to decode JWT")
                 return auth_pb2.ValidateTokenResponse(is_valid=False)
 
             user = db.session.get(UserModel, user_id)
             if user is None:
+                logger.warning("gRPC ValidateToken user %s not found", user_id)
                 return auth_pb2.ValidateTokenResponse(is_valid=False)
 
+            logger.info("gRPC ValidateToken succeeded for user_id=%s", user.id)
             return auth_pb2.ValidateTokenResponse(
                 is_valid=True,
                 user_id=str(user.id),
@@ -56,13 +61,24 @@ class AuthServicer(auth_pb2_grpc.AuthServiceServicer):
         with self.app.app_context():
             user = db.session.get(UserModel, request.user_id)
             if user is None:
+                logger.warning(
+                    "gRPC ValidateUser: user_id=%s does not exist",
+                    request.user_id,
+                )
                 return auth_pb2.UserResponse(exists=False, role="")
 
+            logger.info(
+                "gRPC ValidateUser: verified user_id=%s role=%s",
+                user.id,
+                user.role,
+            )
             return auth_pb2.UserResponse(exists=True, role=user.role)
 
 
 def create_grpc_server(app: Flask, port: int = 50051) -> grpc.Server:
-    """Створює та конфігурує екземпляр gRPC-сервера з RBAC Interceptor."""
+    """Створює та конфігурує екземпляр gRPC-сервера з OTel та RBAC Interceptor."""
+    instrument_grpc_server()
+
     method_roles_map = {
         "/auth.AuthService/ValidateUser": ["user", "auditor", "admin"],
     }
@@ -84,7 +100,10 @@ def create_grpc_server(app: Flask, port: int = 50051) -> grpc.Server:
     return server
 
 
-def start_grpc_server_in_background(app: Flask, port: int | None = None) -> grpc.Server:
+def start_grpc_server_in_background(
+    app: Flask,
+    port: int | None = None,
+) -> grpc.Server:
     """Запускає gRPC-сервер у фоновому потоці паралельно з Flask REST API."""
     grpc_port = port or int(os.getenv("USER_GRPC_PORT", "50051"))
     server = create_grpc_server(app, port=grpc_port)

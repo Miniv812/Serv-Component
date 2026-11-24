@@ -12,6 +12,7 @@ RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
 COPY proto/ ./proto/
+COPY observability/ ./observability/
 COPY user_service/user_app/ ./user_app/
 COPY user_service/migrations/ ./migrations/
 COPY user_service/run.py .

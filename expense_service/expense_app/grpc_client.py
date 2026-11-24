@@ -1,10 +1,13 @@
-from collections.abc import Callable, Sequence
+import logging
+from collections.abc import Callable
 from typing import Any
 
 import grpc
 from flask import current_app
 
 from proto import auth_pb2, auth_pb2_grpc
+
+logger = logging.getLogger(__name__)
 
 
 class _ClientCallDetails(grpc.ClientCallDetails):
@@ -14,7 +17,7 @@ class _ClientCallDetails(grpc.ClientCallDetails):
         self,
         method: str,
         timeout: float | None,
-        metadata: Sequence[tuple[str, str]] | None,
+        metadata: tuple[tuple[str, str | bytes], ...] | None,
         credentials: grpc.CallCredentials | None,
         wait_for_ready: bool | None,
         compression: grpc.Compression | None,
@@ -39,14 +42,16 @@ class AuthClientInterceptor(grpc.UnaryUnaryClientInterceptor):
         client_call_details: grpc.ClientCallDetails,
         request: Any,
     ) -> Any:
-        metadata = list(client_call_details.metadata or [])
+        metadata: list[tuple[str, str | bytes]] = list(
+            client_call_details.metadata or ()
+        )
         if self.auth_header:
             metadata.append(("authorization", self.auth_header))
 
         new_details = _ClientCallDetails(
             method=client_call_details.method,
             timeout=client_call_details.timeout,
-            metadata=metadata,
+            metadata=tuple(metadata),
             credentials=client_call_details.credentials,
             wait_for_ready=client_call_details.wait_for_ready,
             compression=client_call_details.compression,
@@ -72,6 +77,11 @@ def verify_user_via_grpc(
         with grpc.insecure_channel(grpc_addr) as base_channel:
             channel = grpc.intercept_channel(base_channel, interceptor)
             stub = auth_pb2_grpc.AuthServiceStub(channel)
+            logger.info(
+                "Sending gRPC ValidateUser request for user_id=%s to %s",
+                user_id,
+                grpc_addr,
+            )
             response = stub.ValidateUser(
                 auth_pb2.UserRequest(user_id=user_id),
                 timeout=5.0,

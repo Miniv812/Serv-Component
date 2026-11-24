@@ -7,7 +7,7 @@ exclude = ["**/migrations", "**/*_pb2.py", "**/*_pb2.pyi", "**/*_pb2_grpc.py"]
 select = ["E", "F", "I", "W"]
 
 [tool.ruff.lint.isort]
-known-first-party = ["proto", "user_app", "expense_app"]
+known-first-party = ["proto", "observability", "user_app", "expense_app"]
 
 [tool.pytest.ini_options]
 pythonpath = [".", "user_service", "expense_service"]

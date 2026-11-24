@@ -9,6 +9,7 @@ from expense_app.resources.categories import categories_bp
 from expense_app.resources.records import records_bp
 from expense_app.resources.rpc import rpc_bp
 from expense_app.views import health_bp
+from observability.telemetry import init_telemetry, instrument_grpc_client
 
 
 def create_app(test_config: dict | None = None) -> Flask:
@@ -16,6 +17,13 @@ def create_app(test_config: dict | None = None) -> Flask:
     app.config.from_object(ExpenseConfig)
     if test_config is not None:
         app.config.update(test_config)
+
+    init_telemetry(
+        service_name="expense-service",
+        app=app,
+        testing=bool(app.config.get("TESTING", False)),
+    )
+    instrument_grpc_client()
 
     db.init_app(app)
     migrate.init_app(app, db)

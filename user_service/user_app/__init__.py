@@ -1,5 +1,6 @@
 from flask import Flask
 
+from observability.telemetry import init_telemetry
 from user_app import models  # noqa: F401
 from user_app.auth import register_jwt_handlers
 from user_app.config import UserConfig
@@ -14,6 +15,12 @@ def create_app(test_config: dict | None = None) -> Flask:
     app.config.from_object(UserConfig)
     if test_config is not None:
         app.config.update(test_config)
+
+    init_telemetry(
+        service_name="user-service",
+        app=app,
+        testing=bool(app.config.get("TESTING", False)),
+    )
 
     db.init_app(app)
     migrate.init_app(app, db)
