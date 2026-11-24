@@ -1,6 +1,6 @@
 # Expense Tracker Microservices
 
-Мікросервісний застосунок для обліку витрат із міжсервісною взаємодією через **gRPC (HTTP/2)**, публічним інтерфейсом **JSON-RPC 2.0 (Single/Batch)**, JWT-аутентифікацією та рольовим розмежуванням доступу (RBAC), розроблений у межах курсу «Технології розроблення серверних компонентів».
+Мікросервісний застосунок для обліку витрат із міжсервісною взаємодією через **gRPC (HTTP/2)**, публічним інтерфейсом **JSON-RPC 2.0 (Single/Batch)**, JWT-аутентифікацією, рольовим розмежуванням доступу (RBAC) та повним стеком спостережуваності (**OpenTelemetry, Jaeger, Prometheus, Grafana**), розроблений у межах курсу «Технології розроблення серверних компонентів».
 
 ## Структура проєкту
 
@@ -8,7 +8,7 @@
 Serv-Component/
 ├── .github/
 │   └── workflows/
-│       └── ci.yml                  # GitHub Actions CI (ruff, міграції обох БД, pytest, Docker)
+│       └── ci.yml                  # GitHub Actions CI
 ├── proto/
 │   ├── auth.proto                  # Protobuf-контракт міжсервісної взаємодії (AuthService)
 │   ├── auth_pb2.py                 # Згенеровані Protobuf-повідомлення
@@ -43,10 +43,26 @@ Serv-Component/
 │   ├── migrations/                 # Міграції Alembic для expense-db
 │   ├── Dockerfile                  # Образ контейнера expense-service
 │   └── run.py                      # Точка входу (REST + JSON-RPC 2.0 :8080)
+├── observability/
+│   ├── __init__.py
+│   ├── telemetry.py                # Ініціалізація OTel Tracing/Metrics та JSON-логер з trace_id
+│   └── metrics.py                  # Кастомні бізнес- і технічні метрики (Counter, Histogram)
+├── monitoring/
+│   ├── otel-collector-config.yaml  # Конфігурація OTel Collector (OTLP -> Jaeger & Prometheus)
+│   ├── prometheus/
+│   │   └── prometheus.yml          # Конфігурація збору метрик Prometheus
+│   └── grafana/
+│       ├── dashboards/
+│       │   └── expense_dashboard.json
+│       └── provisioning/
+│           ├── dashboards/
+│           │   └── dashboards.yaml
+│           └── datasources/
+│               └── datasources.yaml
 ├── tests/                          # Інтеграційні тести gRPC, JSON-RPC 2.0 та RBAC (pytest)
 ├── bruno_collection/               # Колекція запитів Bruno (REST, JSON-RPC 2.0 Batch, gRPC)
-├── lab1/ .. lab5/                  # Звіти та скріншоти виконання лабораторних робіт
-├── docker-compose.yaml             # Оркестрація 4 контейнерів (user-db, expense-db, user-service, expense-service)
+├── lab1/ .. lab6/                  # Звіти та скріншоти виконання лабораторних робіт
+├── docker-compose.yaml             # Оркестрація 8 контейнерів (БД, мікросервіси та стек Observability)
 ├── pyproject.toml                  # Налаштування ruff, pytest та pyright
 └── requirements.txt                # Зафіксовані залежності Python
 ```
@@ -73,7 +89,12 @@ docker compose up --build -d
 docker compose ps
 ```
 
-4. Зупинити контейнери:
+4. Веб-інтерфейси стеку спостережуваності:
+   - **Jaeger UI:** `http://localhost:16686`
+   - **Prometheus:** `http://localhost:9090`
+   - **Grafana:** `http://localhost:3000` (логін/пароль за замовчуванням: `admin` / `admin`)
+
+5. Зупинити контейнери:
 
 ```bash
 docker compose down
@@ -89,7 +110,7 @@ python -m venv .venv
 pip install -r requirements.txt
 ```
 
-2. Запустити перевірку лінтером `ruff` та автотести `pytest` (працюють автономно без підняття PostgreSQL):
+2. Запустити перевірку лінтером `ruff` та автотести `pytest` (працюють автономно без зовнішньої БД):
 
 ```bash
 ruff check .
@@ -114,3 +135,4 @@ flask --app expense_service/run db upgrade -d expense_service/migrations
   ```bash
   python expense_service/run.py
   ```
+  
