@@ -7,6 +7,7 @@ from expense_app.extensions import db, jwt, migrate
 from expense_app.resources.accounts import accounts_bp
 from expense_app.resources.categories import categories_bp
 from expense_app.resources.records import records_bp
+from expense_app.resources.rpc import rpc_bp
 from expense_app.views import health_bp
 
 
@@ -25,4 +26,5 @@ def create_app(test_config: dict | None = None) -> Flask:
     app.register_blueprint(categories_bp)
     app.register_blueprint(accounts_bp)
     app.register_blueprint(records_bp)
+    app.register_blueprint(rpc_bp)
     return app
