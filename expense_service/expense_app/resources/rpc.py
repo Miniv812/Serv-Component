@@ -1,4 +1,5 @@
-from typing import Any
+import logging
+from typing import Any, cast
 
 from flask import Blueprint, Response, jsonify, request
 from flask_jwt_extended import jwt_required
@@ -17,6 +18,9 @@ from expense_app.schemas import (
     RecordDTOSchema,
     RecordFilterSchema,
 )
+from observability.metrics import record_expense_created
+
+logger = logging.getLogger(__name__)
 
 rpc_bp = Blueprint("rpc", __name__)
 
@@ -71,7 +75,7 @@ def _rpc_create_record(params: dict[str, Any], auth_header: str) -> dict[str, An
         raise JsonRpcError(-32600, "Access denied: insufficient privileges")
 
     try:
-        data = record_create_schema.load(params)
+        data = cast(dict[str, Any], record_create_schema.load(params))
     except ValidationError as err:
         raise JsonRpcError(-32602, "Invalid params", err.messages) from err
 
@@ -114,6 +118,14 @@ def _rpc_create_record(params: dict[str, Any], auth_header: str) -> dict[str, An
     db.session.add(record)
     db.session.commit()
 
+    record_expense_created(float(data["amount"]), channel="json_rpc")
+    logger.info(
+        "Created JSON-RPC expense record id=%s user_id=%s amount=%s",
+        record.id,
+        target_user_id,
+        float(data["amount"]),
+    )
+
     return {
         "record_id": record.id,
         "status": "created",
@@ -126,7 +138,7 @@ def _rpc_create_record(params: dict[str, Any], auth_header: str) -> dict[str, An
 
 def _rpc_get_records(params: dict[str, Any], auth_header: str) -> list[dict[str, Any]]:
     try:
-        filters = record_filter_schema.load(params)
+        filters = cast(dict[str, Any], record_filter_schema.load(params))
     except ValidationError as err:
         raise JsonRpcError(-32602, "Invalid params", err.messages) from err
 
@@ -145,7 +157,7 @@ def _rpc_get_records(params: dict[str, Any], auth_header: str) -> list[dict[str,
         query = query.filter_by(category_id=filters["category_id"])
 
     records = query.order_by(RecordModel.id).all()
-    return records_dto_schema.dump(records)
+    return cast(list[dict[str, Any]], records_dto_schema.dump(records))
 
 
 def _rpc_create_account(params: dict[str, Any], auth_header: str) -> dict[str, Any]:
@@ -154,7 +166,7 @@ def _rpc_create_account(params: dict[str, Any], auth_header: str) -> dict[str, A
         raise JsonRpcError(-32600, "Access denied: insufficient privileges")
 
     try:
-        data = account_create_schema.load(params)
+        data = cast(dict[str, Any], account_create_schema.load(params))
     except ValidationError as err:
         raise JsonRpcError(-32602, "Invalid params", err.messages) from err
 
@@ -173,7 +185,7 @@ def _rpc_create_account(params: dict[str, Any], auth_header: str) -> dict[str, A
     account = AccountModel(user_id=target_user_id, balance=data["balance"])
     db.session.add(account)
     db.session.commit()
-    return account_dto_schema.dump(account)
+    return cast(dict[str, Any], account_dto_schema.dump(account))
 
 
 def _rpc_deposit_account(params: dict[str, Any], auth_header: str) -> dict[str, Any]:
@@ -193,13 +205,16 @@ def _rpc_deposit_account(params: dict[str, Any], auth_header: str) -> dict[str, 
         raise JsonRpcError(-32600, "Access denied to this account")
 
     try:
-        data = account_deposit_schema.load({"amount": params.get("amount")})
+        data = cast(
+            dict[str, Any],
+            account_deposit_schema.load({"amount": params.get("amount")}),
+        )
     except ValidationError as err:
         raise JsonRpcError(-32602, "Invalid params", err.messages) from err
 
     account.balance += data["amount"]
     db.session.commit()
-    return account_dto_schema.dump(account)
+    return cast(dict[str, Any], account_dto_schema.dump(account))
 
 
 def _rpc_get_categories(params: dict[str, Any],
@@ -218,7 +233,7 @@ def _rpc_get_categories(params: dict[str, Any],
             .order_by(CategoryModel.id)
             .all()
         )
-    return categories_dto_schema.dump(categories)
+    return cast(list[dict[str, Any]], categories_dto_schema.dump(categories))
 
 
 RPC_METHODS = {

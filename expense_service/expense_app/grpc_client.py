@@ -1,10 +1,12 @@
 import logging
+import time
 from collections.abc import Callable
 from typing import Any
 
 import grpc
 from flask import current_app
 
+from observability.metrics import record_grpc_validation
 from proto import auth_pb2, auth_pb2_grpc
 
 logger = logging.getLogger(__name__)
@@ -72,6 +74,7 @@ def verify_user_via_grpc(
         "localhost:50051",
     )
     interceptor = AuthClientInterceptor(auth_header=auth_header)
+    start_time = time.perf_counter()
 
     try:
         with grpc.insecure_channel(grpc_addr) as base_channel:
@@ -87,14 +90,20 @@ def verify_user_via_grpc(
                 timeout=5.0,
             )
     except grpc.RpcError as err:
+        elapsed_ms = (time.perf_counter() - start_time) * 1000.0
         if err.code() in (
             grpc.StatusCode.PERMISSION_DENIED,
             grpc.StatusCode.UNAUTHENTICATED,
         ):
+            record_grpc_validation("denied", elapsed_ms)
             return False, None, "Access denied by User Service gRPC Interceptor"
+        record_grpc_validation("error", elapsed_ms)
         return False, None, f"User Service gRPC error: {err.details()}"
 
+    elapsed_ms = (time.perf_counter() - start_time) * 1000.0
     if not response.exists:
+        record_grpc_validation("not_found", elapsed_ms)
         return False, None, f"User with id {user_id} does not exist in User Service"
 
+    record_grpc_validation("success", elapsed_ms)
     return True, response.role, None

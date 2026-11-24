@@ -20,17 +20,18 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 8,
-        "w": 12,
+        "h": 7,
+        "w": 8,
         "x": 0,
         "y": 0
       },
       "id": 1,
-      "title": "Total Expenses Created (Counter)",
+      "title": "Expenses Created by Channel (Counter)",
       "type": "stat",
       "targets": [
         {
-          "expr": "sum(expenses_created_total) or vector(0)",
+          "expr": "sum by (channel) (expenses_created_total) or vector(0)",
+          "legendFormat": "{{channel}}",
           "refId": "A"
         }
       ]
@@ -47,9 +48,9 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 12,
+        "h": 7,
+        "w": 8,
+        "x": 8,
         "y": 0
       },
       "id": 2,
@@ -69,23 +70,23 @@
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "reqps"
+          "unit": "short"
         },
         "overrides": []
       },
       "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 0,
-        "y": 8
+        "h": 7,
+        "w": 8,
+        "x": 16,
+        "y": 0
       },
       "id": 3,
-      "title": "gRPC User Validations Rate",
-      "type": "timeseries",
+      "title": "User Auth Events (Counter)",
+      "type": "stat",
       "targets": [
         {
-          "expr": "rate(grpc_user_validations_total[1m])",
-          "legendFormat": "{{status}}",
+          "expr": "sum by (event) (user_auth_events_total) or vector(0)",
+          "legendFormat": "{{event}}",
           "refId": "A"
         }
       ]
@@ -97,7 +98,40 @@
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "s"
+          "unit": "currencyUAH"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 7
+      },
+      "id": 4,
+      "title": "Expense Amount p95 & p50 (Histogram)",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(expense_amount_distribution_bucket[5m])) by (le))",
+          "legendFormat": "p95 amount",
+          "refId": "A"
+        },
+        {
+          "expr": "histogram_quantile(0.50, sum(rate(expense_amount_distribution_bucket[5m])) by (le))",
+          "legendFormat": "p50 amount",
+          "refId": "B"
+        }
+      ]
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms"
         },
         "overrides": []
       },
@@ -105,15 +139,43 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 8
+        "y": 7
       },
-      "id": 4,
-      "title": "HTTP Request Duration p95 (Histogram)",
+      "id": 5,
+      "title": "gRPC ValidateUser Latency p95 (Histogram)",
       "type": "timeseries",
       "targets": [
         {
-          "expr": "histogram_quantile(0.95, sum(rate(http_server_duration_milliseconds_bucket[1m])) by (le, service_name)) / 1000",
-          "legendFormat": "{{service_name}}",
+          "expr": "histogram_quantile(0.95, sum(rate(grpc_validation_duration_ms_bucket[5m])) by (le))",
+          "legendFormat": "gRPC p95 (ms)",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 24,
+        "x": 0,
+        "y": 15
+      },
+      "id": 6,
+      "title": "gRPC User Validations by Status (Counter)",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "sum by (status) (grpc_user_validations_total)",
+          "legendFormat": "{{status}}",
           "refId": "A"
         }
       ]

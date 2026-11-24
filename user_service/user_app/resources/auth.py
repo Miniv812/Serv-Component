@@ -5,6 +5,7 @@ from flask import Blueprint, Response, jsonify, request
 from flask_jwt_extended import create_access_token
 from marshmallow import ValidationError
 
+from observability.metrics import record_user_auth_event
 from user_app.auth import hash_password, verify_password
 from user_app.extensions import db
 from user_app.models import UserModel
@@ -72,6 +73,7 @@ def register() -> tuple[Response, int]:
     db.session.add(user)
     db.session.commit()
 
+    record_user_auth_event("register")
     logger.info("Registered new user username=%s id=%s", user.username, user.id)
     return jsonify(user_dto_schema.dump(user)), 201
 
@@ -98,6 +100,7 @@ def login() -> tuple[Response, int]:
 
     user = UserModel.query.filter_by(username=data["username"].strip()).first()
     if user is None or not verify_password(data["password"], user.password_hash):
+        record_user_auth_event("login_failed")
         logger.warning(
             "Failed login attempt for username=%s",
             data["username"].strip(),
@@ -120,6 +123,7 @@ def login() -> tuple[Response, int]:
         },
     )
 
+    record_user_auth_event("login_success")
     logger.info("User logged in username=%s id=%s", user.username, user.id)
     return (
         jsonify(

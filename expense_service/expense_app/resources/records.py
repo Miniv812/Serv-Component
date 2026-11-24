@@ -1,3 +1,6 @@
+import logging
+from typing import Any, cast
+
 from flask import Blueprint, Response, jsonify, request
 from flask_jwt_extended import jwt_required
 from marshmallow import ValidationError
@@ -11,6 +14,9 @@ from expense_app.extensions import db
 from expense_app.grpc_client import verify_user_via_grpc
 from expense_app.models import AccountModel, CategoryModel, RecordModel
 from expense_app.schemas import RecordCreateSchema, RecordDTOSchema, RecordFilterSchema
+from observability.metrics import record_expense_created
+
+logger = logging.getLogger(__name__)
 
 records_bp = Blueprint("records", __name__)
 record_create_schema = RecordCreateSchema()
@@ -36,7 +42,7 @@ def create_record() -> tuple[Response, int]:
         )
 
     try:
-        data = record_create_schema.load(payload)
+        data = cast(dict[str, Any], record_create_schema.load(payload))
     except ValidationError as err:
         return jsonify({"error": "validation_error", "messages": err.messages}), 400
 
@@ -119,7 +125,15 @@ def create_record() -> tuple[Response, int]:
     db.session.add(record)
     db.session.commit()
 
-    response_data = record_dto_schema.dump(record)
+    record_expense_created(float(data["amount"]), channel="rest")
+    logger.info(
+        "Created REST expense record id=%s user_id=%s amount=%s",
+        record.id,
+        target_user_id,
+        float(data["amount"]),
+    )
+
+    response_data = cast(dict[str, Any], record_dto_schema.dump(record))
     response_data["remaining_balance"] = float(account.balance)
     return jsonify(response_data), 201
 
@@ -208,7 +222,8 @@ def get_records() -> tuple[Response, int]:
         )
 
     try:
-        filters = record_filter_schema.load(request.args.to_dict())
+        filters = cast(dict[str, Any],
+                       record_filter_schema.load(request.args.to_dict()))
     except ValidationError as err:
         return jsonify({"error": "validation_error", "messages": err.messages}), 400
 
