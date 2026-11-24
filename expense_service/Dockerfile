@@ -11,6 +11,7 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
+COPY proto/ ./proto/
 COPY expense_service/expense_app/ ./expense_app/
 COPY expense_service/migrations/ ./migrations/
 COPY expense_service/run.py .

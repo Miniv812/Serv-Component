@@ -8,6 +8,7 @@ from expense_app.auth import (
     roles_required,
 )
 from expense_app.extensions import db
+from expense_app.grpc_client import verify_user_via_grpc
 from expense_app.models import AccountModel, CategoryModel, RecordModel
 from expense_app.schemas import RecordCreateSchema, RecordDTOSchema, RecordFilterSchema
 
@@ -21,7 +22,7 @@ records_dto_schema = RecordDTOSchema(many=True)
 @records_bp.route("/record", methods=["POST"])
 @roles_required("user", "admin")
 def create_record() -> tuple[Response, int]:
-    """Створення витрати з RBAC та списанням з рахунку (Варіант 3)."""
+    """Створення витрати з синхронною gRPC-перевіркою користувача та списанням."""
     payload = request.get_json(silent=True)
     if not isinstance(payload, dict):
         return (
@@ -56,6 +57,19 @@ def create_record() -> tuple[Response, int]:
                 403,
             )
         target_user_id = current_user_id
+
+    auth_header = request.headers.get("Authorization", "")
+    is_valid, _, grpc_error = verify_user_via_grpc(target_user_id, auth_header)
+    if not is_valid:
+        return (
+            jsonify(
+                {
+                    "error": "forbidden",
+                    "message": grpc_error or "User verification failed",
+                }
+            ),
+            403,
+        )
 
     category = db.session.get(CategoryModel, data["category_id"])
     if category is None:

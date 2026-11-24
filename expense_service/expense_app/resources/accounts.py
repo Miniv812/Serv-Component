@@ -8,6 +8,7 @@ from expense_app.auth import (
     roles_required,
 )
 from expense_app.extensions import db
+from expense_app.grpc_client import verify_user_via_grpc
 from expense_app.models import AccountModel
 from expense_app.schemas import (
     AccountCreateSchema,
@@ -25,7 +26,7 @@ accounts_dto_schema = AccountDTOSchema(many=True)
 @accounts_bp.route("/account", methods=["POST"])
 @roles_required("user", "admin")
 def create_account() -> tuple[Response, int]:
-    """Створення рахунку: user — лише для себе, admin — для будь-кого."""
+    """Створення рахунку з перевіркою користувача через gRPC."""
     payload = request.get_json(silent=True)
     if not isinstance(payload, dict):
         return (
@@ -60,6 +61,19 @@ def create_account() -> tuple[Response, int]:
                 403,
             )
         target_user_id = current_user_id
+
+    auth_header = request.headers.get("Authorization", "")
+    is_valid, _, grpc_error = verify_user_via_grpc(target_user_id, auth_header)
+    if not is_valid:
+        return (
+            jsonify(
+                {
+                    "error": "forbidden",
+                    "message": grpc_error or "User verification failed",
+                }
+            ),
+            403,
+        )
 
     account = AccountModel(
         user_id=target_user_id,
