@@ -27,11 +27,21 @@
 ## Скріншоти результатів
 
 ### 1. Успішний прогін автотестів `pytest` у консолі 
+<img width="974" height="223" alt="изображение" src="https://github.com/user-attachments/assets/9ea52ff5-4a2b-4626-a1e7-0b35357b7f23" />
 
 ### 2. Запуск усіх 4 контейнерів мікросервісної архітектури
+<img width="974" height="156" alt="изображение" src="https://github.com/user-attachments/assets/469a1aee-303c-46a0-9607-8568bba0aae9" />
+<img width="974" height="133" alt="изображение" src="https://github.com/user-attachments/assets/85b33576-9c6c-4912-a547-0c19aca0473f" />
 
 ### 3. Реєстрація та вхід у `user-service` (`http://localhost:8081/login`)
+<img width="974" height="345" alt="изображение" src="https://github.com/user-attachments/assets/2005d631-0e08-456a-9560-d289e45f08c0" />
+<img width="974" height="285" alt="изображение" src="https://github.com/user-attachments/assets/f059a4e5-c13e-45b3-8ca4-9e26e65484dd" />
 
 ### 4. Пакетний запит JSON-RPC 2.0 Batch (`POST http://localhost:8080/rpc`) зі списанням коштів
+<img width="974" height="324" alt="изображение" src="https://github.com/user-attachments/assets/de0831ff-5337-44eb-bff2-29484df8fb83" />
+<img width="974" height="501" alt="изображение" src="https://github.com/user-attachments/assets/ef691efa-1b50-4cc4-ae90-c59bce1ad551" />
 
 ### 5. Прямий виклик gRPC `ValidateUser` (`localhost:50051`) з Metadata та перевірка `RBACServerInterceptor` (`PERMISSION_DENIED`)
+<img width="974" height="202" alt="изображение" src="https://github.com/user-attachments/assets/ceaab7f0-11ca-466c-bc23-c8dac1e73d3d" />
+<img width="974" height="213" alt="изображение" src="https://github.com/user-attachments/assets/879e9132-aad0-476b-b320-3b407ac9f0ce" />
+<img width="974" height="261" alt="изображение" src="https://github.com/user-attachments/assets/63ddfebc-4260-404d-b7a1-db54eac21000" />
