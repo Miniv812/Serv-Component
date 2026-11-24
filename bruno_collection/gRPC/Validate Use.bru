@@ -1,0 +1,26 @@
+meta {
+  name: Validate Use
+  type: grpc
+  seq: 1
+}
+
+grpc {
+  url: grpc://localhost:50051
+  method: /auth.AuthService/ValidateUser
+  body: grpc
+  auth: none
+  methodType: unary
+}
+
+metadata {
+  authorization: Bearer {{accessToken}}
+}
+
+body:grpc {
+  name: message 1
+  content: '''
+    {
+      "user_id": 1
+    }
+  '''
+}

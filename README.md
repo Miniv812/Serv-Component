@@ -1,6 +1,6 @@
-# Expense Tracker Backend
+# Expense Tracker Microservices
 
-Серверний застосунок для обліку витрат із JWT-аутентифікацією, рольовим розмежуванням доступу (RBAC) та PostgreSQL, розроблений у межах курсу «Технології розроблення серверних компонентів».
+Мікросервісний застосунок для обліку витрат із міжсервісною взаємодією через **gRPC (HTTP/2)**, публічним інтерфейсом **JSON-RPC 2.0 (Single/Batch)**, JWT-аутентифікацією та рольовим розмежуванням доступу (RBAC), розроблений у межах курсу «Технології розроблення серверних компонентів».
 
 ## Структура проєкту
 
@@ -8,36 +8,47 @@
 Serv-Component/
 ├── .github/
 │   └── workflows/
-│       └── ci.yml                  # GitHub Actions CI (ruff, міграції, pytest + PostgreSQL, Docker)
-├── app/
-│   ├── __init__.py                 # Фабрика Flask-застосунку, ініціалізація БД, JWT та Blueprints
-│   ├── auth.py                     # Хешування Argon2, декоратор @roles_required, обробники JWT 401
-│   ├── config.py                   # Конфігурація підключення до PostgreSQL та JWT_SECRET_KEY
-│   ├── extensions.py               # Ініціалізація SQLAlchemy, Flask-Migrate та JWTManager
-│   ├── models.py                   # ORM-моделі (User, Category, Account, Record)
-│   ├── schemas.py                  # Схеми валідації Marshmallow та DTO
-│   ├── views.py                    # Системні ендпоінти Healthcheck (/healthz/live, /healthz/ready)
-│   └── resources/
-│       ├── auth.py                 # Публічні ендпоінти POST /register та POST /login
-│       ├── users.py                # REST API користувачів з RBAC та зміною ролей
-│       ├── categories.py           # REST API глобальних та персональних категорій
-│       ├── accounts.py             # REST API рахунків користувача
-│       └── records.py              # REST API витрат зі списанням коштів та фільтрацією
-├── migrations/                     # Версіоновані міграції бази даних Alembic
-├── tests/                          # Автоматизовані модульні та e2e тести (pytest)
-├── bruno_collection/               # Колекція API-запитів у форматі Bruno OpenCollection
-├── lab1/                           # Звіт та скріншоти виконання Лабораторної роботи №1
-├── lab2/                           # Звіт та скріншоти виконання Лабораторної роботи №2
-├── lab3/                           # Звіт та скріншоти виконання Лабораторної роботи №3
-├── lab4/                           # Звіт та скріншоти виконання Лабораторної роботи №4
-├── .dockerignore                   # Виключення файлів при збірці Docker-образу
-├── .env.example                    # Шаблон змінних середовища для PostgreSQL та JWT
-├── .gitignore                      # Виключення службових файлів для Git
-├── Dockerfile                      # Конфігурація збірки контейнера застосунку з автоміграціями
-├── docker-compose.yaml             # Оркестрація застосунку та PostgreSQL 16
-├── pyproject.toml                  # Налаштування лінтера ruff
-├── requirements.txt                # Зафіксовані залежності Python
-└── run.py                          # Точка входу для запуску сервера
+│       └── ci.yml                  # GitHub Actions CI (ruff, міграції обох БД, pytest, Docker)
+├── proto/
+│   ├── auth.proto                  # Protobuf-контракт міжсервісної взаємодії (AuthService)
+│   ├── auth_pb2.py                 # Згенеровані Protobuf-повідомлення
+│   ├── auth_pb2.pyi                # Типізація Protobuf-повідомлень
+│   └── auth_pb2_grpc.py            # Згенеровані gRPC stubs та servicer
+├── user_service/
+│   ├── user_app/
+│   │   ├── __init__.py             # Фабрика Flask-застосунку User Service
+│   │   ├── auth.py                 # Хешування Argon2, декоратори RBAC, обробники JWT
+│   │   ├── config.py               # Конфігурація підключення до user-db та JWT
+│   │   ├── extensions.py           # Ініціалізація SQLAlchemy, Flask-Migrate та JWTManager
+│   │   ├── grpc_server.py          # Реалізація AuthService та запуск gRPC-сервера (:50051)
+│   │   ├── interceptors.py         # Серверний перехоплювач RBACServerInterceptor
+│   │   ├── models.py               # ORM-модель UserModel
+│   │   ├── schemas.py              # Схеми валідації Marshmallow та DTO
+│   │   ├── views.py                # Healthcheck (/healthz/live, /healthz/ready)
+│   │   └── resources/              # REST-ендпоінти auth.py та users.py
+│   ├── migrations/                 # Міграції Alembic для user-db
+│   ├── Dockerfile                  # Образ контейнера user-service
+│   └── run.py                      # Точка входу (REST :8081 + gRPC :50051)
+├── expense_service/
+│   ├── expense_app/
+│   │   ├── __init__.py             # Фабрика Flask-застосунку Expense Service
+│   │   ├── auth.py                 # Перевірка JWT та ролей RBAC
+│   │   ├── config.py               # Конфігурація expense-db та адреси gRPC-сервера
+│   │   ├── extensions.py           # Ініціалізація SQLAlchemy, Flask-Migrate та JWTManager
+│   │   ├── grpc_client.py          # gRPC-клієнт та клієнтський перехоплювач AuthClientInterceptor
+│   │   ├── models.py               # ORM-моделі CategoryModel, AccountModel, RecordModel
+│   │   ├── schemas.py              # Схеми валідації Marshmallow та DTO
+│   │   ├── views.py                # Healthcheck (/healthz/live, /healthz/ready)
+│   │   └── resources/              # REST-ендпоінти та JSON-RPC 2.0 (rpc.py)
+│   ├── migrations/                 # Міграції Alembic для expense-db
+│   ├── Dockerfile                  # Образ контейнера expense-service
+│   └── run.py                      # Точка входу (REST + JSON-RPC 2.0 :8080)
+├── tests/                          # Інтеграційні тести gRPC, JSON-RPC 2.0 та RBAC (pytest)
+├── bruno_collection/               # Колекція запитів Bruno (REST, JSON-RPC 2.0 Batch, gRPC)
+├── lab1/ .. lab5/                  # Звіти та скріншоти виконання лабораторних робіт
+├── docker-compose.yaml             # Оркестрація 4 контейнерів (user-db, expense-db, user-service, expense-service)
+├── pyproject.toml                  # Налаштування ruff, pytest та pyright
+└── requirements.txt                # Зафіксовані залежності Python
 ```
 
 ## Локальний запуск через Docker Compose
@@ -49,27 +60,20 @@ git clone https://github.com/Miniv812/Serv-Component.git
 cd Serv-Component
 ```
 
-2. Створити файл `.env` на основі шаблону `.env.example`:
+2. Створити файл `.env` на основі `.env.example`:
 
 ```bash
 cp .env.example .env
 ```
 
-3. Зібрати Docker-образ та запустити застосунок разом із PostgreSQL 16:
+3. Зібрати Docker-образи та запустити всі 4 контейнери:
 
 ```bash
 docker compose up --build -d
-```
-
-4. Перевірити статус контейнерів:
-
-```bash
 docker compose ps
 ```
 
-Після запуску сервер доступний за адресою `http://localhost:8080`, а PostgreSQL — на порту `5432`.
-
-5. Зупинити контейнери (зі збереженням даних у volume `postgres_data`):
+4. Зупинити контейнери:
 
 ```bash
 docker compose down
@@ -77,7 +81,7 @@ docker compose down
 
 ## Запуск тестів та локальна розробка без Docker
 
-1. Активувати віртуальне середовище та встановити залежності:
+1. Створити та активувати віртуальне середовище, встановити залежності:
 
 ```powershell
 python -m venv .venv
@@ -85,16 +89,28 @@ python -m venv .venv
 pip install -r requirements.txt
 ```
 
-2. Запустити перевірку лінтером `ruff` та набір тестів `pytest`:
+2. Запустити перевірку лінтером `ruff` та автотести `pytest` (працюють автономно без підняття PostgreSQL):
 
 ```bash
 ruff check .
 pytest --maxfail=1 --disable-warnings -v
 ```
 
-3. Застосувати міграції та запустити застосунок локально:
+3. Застосувати міграції для обох баз даних (за умови запущеного локального PostgreSQL на портах `5433` та `5432`):
 
 ```bash
-flask --app run db upgrade
-python run.py
+flask --app user_service/run db upgrade -d user_service/migrations
+flask --app expense_service/run db upgrade -d expense_service/migrations
 ```
+
+4. Запустити мікросервіси у двох окремих терміналах:
+
+- **Термінал 1 (`user-service` — REST на `:8081` та gRPC на `:50051`):**
+  ```bash
+  python user_service/run.py
+  ```
+
+- **Термінал 2 (`expense-service` — REST та JSON-RPC 2.0 на `:8080`):**
+  ```bash
+  python expense_service/run.py
+  ```

@@ -1,0 +1,11 @@
+meta {
+  name: Readiness (User Service)
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{userServiceUrl}}/healthz/ready
+  body: none
+  auth: none
+}

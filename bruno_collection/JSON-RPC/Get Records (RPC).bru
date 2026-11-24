@@ -1,0 +1,26 @@
+meta {
+  name: Get Records (RPC)
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/rpc
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+body:json {
+  {
+    "jsonrpc": "2.0",
+    "method": "get_records",
+    "params": {
+      "user_id": 1
+    },
+    "id": 3
+  }
+}

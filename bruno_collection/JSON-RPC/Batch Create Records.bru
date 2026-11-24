@@ -1,0 +1,40 @@
+meta {
+  name: Batch Create Records
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/rpc
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+body:json {
+  [
+    {
+      "jsonrpc": "2.0",
+      "method": "create_record",
+      "params": {
+        "user_id": 1,
+        "category_id": 1,
+        "amount": 100.0
+      },
+      "id": 1
+    },
+    {
+      "jsonrpc": "2.0",
+      "method": "create_record",
+      "params": {
+        "user_id": 1,
+        "category_id": 1,
+        "amount": 45.5
+      },
+      "id": 2
+    }
+  ]
+}
