@@ -22,11 +22,18 @@
 ## Скріншоти результатів
 
 ### 1. Успішний прогін автотестів `pytest` у консолі
+<img width="974" height="300" alt="изображение" src="https://github.com/user-attachments/assets/96342da7-cbae-4790-9be6-4f1690254e5e" />
 
 ### 2. Реєстрація та вхід користувача з отриманням Access JWT (`POST /register`, `POST /login`)
+<img width="974" height="208" alt="изображение" src="https://github.com/user-attachments/assets/fe207ad6-4156-42ea-9e64-a77ecd898695" />
+<img width="974" height="179" alt="изображение" src="https://github.com/user-attachments/assets/491cc532-b2dd-40fa-bce3-41126971af19" />
+<img width="974" height="322" alt="изображение" src="https://github.com/user-attachments/assets/7d26bb16-0e98-4821-beb7-b985757e2f8d" />
 
 ### 3. Захист ендпоінтів без токена (`401 Unauthorized`)
+<img width="974" height="239" alt="изображение" src="https://github.com/user-attachments/assets/55fbdfbd-e5ed-4125-95e6-a5e5a42e0570" />
 
 ### 4. Перевірка рольової моделі RBAC (`403 Forbidden` при спробі створити глобальну категорію з роллю `user`)
+<img width="974" height="199" alt="изображение" src="https://github.com/user-attachments/assets/211c838c-ebd1-4d19-84e2-731cd721922c" />
 
 ### 5. Create Record із Bearer-токеном (`201 Created` та списання коштів з рахунку)
+<img width="974" height="233" alt="изображение" src="https://github.com/user-attachments/assets/c6707759-2079-4510-a4be-75a23b7a89e4" />
