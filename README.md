@@ -53,15 +53,18 @@ Serv-Component/
 │   │   └── prometheus.yml          # Конфігурація збору метрик Prometheus
 │   └── grafana/
 │       ├── dashboards/
-│       │   └── expense_dashboard.json
+│       │   └── expense_dashboard.json   # JSON-дашборд моніторингу витрат та gRPC
 │       └── provisioning/
 │           ├── dashboards/
-│           │   └── dashboards.yaml
+│           │   └── dashboards.yaml      # Провайдер автоімпорту JSON-дашбордів
 │           └── datasources/
-│               └── datasources.yaml
+│               └── datasources.yaml     # Автопідключення джерел даних (Prometheus, Jaeger)
 ├── tests/                          # Інтеграційні тести gRPC, JSON-RPC 2.0 та RBAC (pytest)
 ├── bruno_collection/               # Колекція запитів Bruno (REST, JSON-RPC 2.0 Batch, gRPC)
 ├── lab1/ .. lab6/                  # Звіти та скріншоти виконання лабораторних робіт
+├── .dockerignore                   # Виключення зайвих файлів під час збірки Docker-образів
+├── .env.example                    # Шаблон змінних середовища для локального запуску
+├── .gitignore                      # Список файлів і директорій, що ігноруються Git
 ├── docker-compose.yaml             # Оркестрація 8 контейнерів (БД, мікросервіси та стек Observability)
 ├── pyproject.toml                  # Налаштування ruff, pytest та pyright
 └── requirements.txt                # Зафіксовані залежності Python
