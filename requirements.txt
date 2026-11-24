@@ -1,7 +1,11 @@
 Flask==3.1.0
 Flask-SQLAlchemy==3.1.1
 Flask-Migrate==4.1.0
+Flask-JWT-Extended==4.7.1
 psycopg[binary]==3.2.4
 marshmallow==3.26.1
+passlib[argon2]==1.7.4
 python-dotenv==1.0.1
+pytest==8.3.4
+pytest-freezegun==0.4.2
 ruff==0.8.0

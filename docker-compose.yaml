@@ -24,6 +24,7 @@ services:
     container_name: expense-app
     environment:
       DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-expense_user}:${POSTGRES_PASSWORD:-expense_pass}@db:5432/${POSTGRES_DB:-expense_db}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-super-secret-jwt-key-change-in-production}
     ports:
       - "8080:8080"
     depends_on:

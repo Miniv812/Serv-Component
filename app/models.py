@@ -5,13 +5,26 @@ from app.extensions import db
 
 
 class UserModel(db.Model):
-    """ORM-модель користувача."""
+    """ORM-модель користувача з обліковими даними та роллю"""
 
     __tablename__ = "users"
 
     id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(80), unique=True, nullable=False)
     name = db.Column(db.String(100), nullable=False)
+    password_hash = db.Column(db.String(255), nullable=False)
+    role = db.Column(
+        db.String(20),
+        default="user",
+        server_default="user",
+        nullable=False,
+    )
 
+    categories = db.relationship(
+        "CategoryModel",
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )
     accounts = db.relationship(
         "AccountModel",
         back_populates="user",
@@ -26,18 +39,26 @@ class UserModel(db.Model):
     def to_dict(self) -> dict:
         return {
             "id": self.id,
+            "username": self.username,
             "name": self.name,
+            "role": self.role,
         }
 
 
 class CategoryModel(db.Model):
-    """ORM-модель категорії витрат."""
+    """ORM-модель категорії витрат (глобальної або персональної)."""
 
     __tablename__ = "categories"
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
+    user_id = db.Column(
+        db.Integer,
+        db.ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=True,
+    )
 
+    user = db.relationship("UserModel", back_populates="categories")
     records = db.relationship(
         "RecordModel",
         back_populates="category",
@@ -48,11 +69,13 @@ class CategoryModel(db.Model):
         return {
             "id": self.id,
             "name": self.name,
+            "user_id": self.user_id,
+            "is_global": self.user_id is None,
         }
 
 
 class AccountModel(db.Model):
-    """ORM-модель рахунку користувача."""
+    """ORM-модель рахунку користувача"""
 
     __tablename__ = "accounts"
 
