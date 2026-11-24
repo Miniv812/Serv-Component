@@ -1,36 +1,75 @@
 services:
-  db:
+  user-db:
     image: postgres:16-alpine
-    container_name: expense-db
+    container_name: user-db
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-expense_user}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-expense_pass}
-      POSTGRES_DB: ${POSTGRES_DB:-expense_db}
+      POSTGRES_USER: ${USER_DB_USER:-user_svc}
+      POSTGRES_PASSWORD: ${USER_DB_PASSWORD:-user_pass}
+      POSTGRES_DB: ${USER_DB_NAME:-user_db}
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - user_postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-expense_user} -d ${POSTGRES_DB:-expense_db}"]
+      test: ["CMD-SHELL", "pg_isready -U ${USER_DB_USER:-user_svc} -d ${USER_DB_NAME:-user_db}"]
       interval: 5s
       timeout: 5s
       retries: 5
     restart: unless-stopped
 
-  app:
+  expense-db:
+    image: postgres:16-alpine
+    container_name: expense-db
+    environment:
+      POSTGRES_USER: ${EXPENSE_DB_USER:-expense_svc}
+      POSTGRES_PASSWORD: ${EXPENSE_DB_PASSWORD:-expense_pass}
+      POSTGRES_DB: ${EXPENSE_DB_NAME:-expense_db}
+    ports:
+      - "5432:5432"
+    volumes:
+      - expense_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${EXPENSE_DB_USER:-expense_svc} -d ${EXPENSE_DB_NAME:-expense_db}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  user-service:
     build:
       context: .
-      dockerfile: Dockerfile
-    container_name: expense-app
+      dockerfile: user_service/Dockerfile
+    container_name: user-service
     environment:
-      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-expense_user}:${POSTGRES_PASSWORD:-expense_pass}@db:5432/${POSTGRES_DB:-expense_db}
+      USER_DATABASE_URL: postgresql+psycopg://${USER_DB_USER:-user_svc}:${USER_DB_PASSWORD:-user_pass}@user-db:5432/${USER_DB_NAME:-user_db}
       JWT_SECRET_KEY: ${JWT_SECRET_KEY:-super-secret-jwt-key-change-in-production}
     ports:
-      - "8080:8080"
+      - "8081:8081"
+      - "50051:50051"
     depends_on:
-      db:
+      user-db:
         condition: service_healthy
     restart: unless-stopped
 
+  expense-service:
+    build:
+      context: .
+      dockerfile: expense_service/Dockerfile
+    container_name: expense-service
+    environment:
+      EXPENSE_DATABASE_URL: postgresql+psycopg://${EXPENSE_DB_USER:-expense_svc}:${EXPENSE_DB_PASSWORD:-expense_pass}@expense-db:5432/${EXPENSE_DB_NAME:-expense_db}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-super-secret-jwt-key-change-in-production}
+      USER_SERVICE_GRPC_ADDR: user-service:50051
+    ports:
+      - "8080:8080"
+    depends_on:
+      expense-db:
+        condition: service_healthy
+      user-service:
+        condition: service_started
+    restart: unless-stopped
+
 volumes:
-  postgres_data:
+  user_postgres_data:
+  expense_postgres_data:
+  

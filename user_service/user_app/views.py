@@ -4,17 +4,18 @@ from flask import Blueprint, Response, jsonify
 from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 
-from app.extensions import db
+from user_app.extensions import db
 
 health_bp = Blueprint("health", __name__, url_prefix="/healthz")
 
 
 @health_bp.route("/live", methods=["GET"])
 def liveness_check() -> tuple[Response, int]:
-    """Перевірка життєздатності процесу застосунку (Liveness)."""
+    """Перевірка життєздатності User Service."""
     return (
         jsonify(
             {
+                "service": "user-service",
                 "status": "alive",
                 "timestamp": datetime.now(timezone.utc).isoformat(),
             }
@@ -25,12 +26,13 @@ def liveness_check() -> tuple[Response, int]:
 
 @health_bp.route("/ready", methods=["GET"])
 def readiness_check() -> tuple[Response, int]:
-    """Перевірка готовності застосунку та підключення до БД (Readiness)."""
+    """Перевірка готовності User Service та підключення до user-db."""
     try:
         db.session.execute(text("SELECT 1"))
         return (
             jsonify(
                 {
+                    "service": "user-service",
                     "status": "ready",
                     "database": "connected",
                     "timestamp": datetime.now(timezone.utc).isoformat(),
@@ -42,6 +44,7 @@ def readiness_check() -> tuple[Response, int]:
         return (
             jsonify(
                 {
+                    "service": "user-service",
                     "status": "not_ready",
                     "database": "unavailable",
                     "timestamp": datetime.now(timezone.utc).isoformat(),

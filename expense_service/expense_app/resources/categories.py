@@ -2,10 +2,14 @@ from flask import Blueprint, Response, jsonify, request
 from flask_jwt_extended import jwt_required
 from marshmallow import ValidationError
 
-from app.auth import get_current_user_id, get_current_user_roles, roles_required
-from app.extensions import db
-from app.models import CategoryModel
-from app.schemas import CategoryCreateSchema, CategoryDTOSchema
+from expense_app.auth import (
+    get_current_user_id,
+    get_current_user_roles,
+    roles_required,
+)
+from expense_app.extensions import db
+from expense_app.models import CategoryModel
+from expense_app.schemas import CategoryCreateSchema, CategoryDTOSchema
 
 categories_bp = Blueprint("categories", __name__)
 category_create_schema = CategoryCreateSchema()

@@ -2,10 +2,10 @@ from flask import Blueprint, Response, jsonify, request
 from flask_jwt_extended import create_access_token
 from marshmallow import ValidationError
 
-from app.auth import hash_password, verify_password
-from app.extensions import db
-from app.models import UserModel
-from app.schemas import LoginSchema, RegisterSchema, UserDTOSchema
+from user_app.auth import hash_password, verify_password
+from user_app.extensions import db
+from user_app.models import UserModel
+from user_app.schemas import LoginSchema, RegisterSchema, UserDTOSchema
 
 auth_bp = Blueprint("auth", __name__)
 register_schema = RegisterSchema()
@@ -15,7 +15,7 @@ user_dto_schema = UserDTOSchema()
 
 @auth_bp.route("/register", methods=["POST"])
 def register() -> tuple[Response, int]:
-    """Публічна реєстрація користувача з присвоєнням ролі 'user'."""
+    """Публічна реєстрація користувача в User Service."""
     payload = request.get_json(silent=True)
     if not isinstance(payload, dict):
         return (
@@ -71,7 +71,7 @@ def register() -> tuple[Response, int]:
 
 @auth_bp.route("/login", methods=["POST"])
 def login() -> tuple[Response, int]:
-    """Аутентифікація користувача та видача Access JWT з роллю у claims."""
+    """Аутентифікація користувача та видача Access JWT."""
     payload = request.get_json(silent=True)
     if not isinstance(payload, dict):
         return (

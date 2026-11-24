@@ -5,12 +5,12 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
-class Config:
-    """Конфігурація застосунку, БД та JWT-аутентифікації."""
+class UserConfig:
+    """Конфігурація мікросервісу користувачів та БД user-db."""
 
     SQLALCHEMY_DATABASE_URI = os.getenv(
-        "DATABASE_URL",
-        "postgresql+psycopg://expense_user:expense_pass@localhost:5432/expense_db",
+        "USER_DATABASE_URL",
+        "postgresql+psycopg://user_svc:user_pass@localhost:5433/user_db",
     )
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     JWT_SECRET_KEY = os.getenv(

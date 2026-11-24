@@ -6,6 +6,9 @@ psycopg[binary]==3.2.4
 marshmallow==3.26.1
 passlib[argon2]==1.7.4
 python-dotenv==1.0.1
+grpcio==1.70.0
+grpcio-tools==1.70.0
+grpcio-reflection==1.70.0
 pytest==8.3.4
 freezegun==1.5.1
 ruff==0.8.0

@@ -2,10 +2,10 @@ from flask import Blueprint, Response, jsonify, request
 from flask_jwt_extended import jwt_required
 from marshmallow import ValidationError
 
-from app.auth import get_current_user_id, get_current_user_roles, roles_required
-from app.extensions import db
-from app.models import UserModel
-from app.schemas import UserDTOSchema, UserRoleUpdateSchema
+from user_app.auth import get_current_user_id, get_current_user_roles, roles_required
+from user_app.extensions import db
+from user_app.models import UserModel
+from user_app.schemas import UserDTOSchema, UserRoleUpdateSchema
 
 users_bp = Blueprint("users", __name__)
 user_dto_schema = UserDTOSchema()

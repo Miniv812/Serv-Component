@@ -2,10 +2,18 @@ from flask import Blueprint, Response, jsonify, request
 from flask_jwt_extended import jwt_required
 from marshmallow import ValidationError
 
-from app.auth import get_current_user_id, get_current_user_roles, roles_required
-from app.extensions import db
-from app.models import AccountModel, UserModel
-from app.schemas import AccountCreateSchema, AccountDepositSchema, AccountDTOSchema
+from expense_app.auth import (
+    get_current_user_id,
+    get_current_user_roles,
+    roles_required,
+)
+from expense_app.extensions import db
+from expense_app.models import AccountModel
+from expense_app.schemas import (
+    AccountCreateSchema,
+    AccountDepositSchema,
+    AccountDTOSchema,
+)
 
 accounts_bp = Blueprint("accounts", __name__)
 account_create_schema = AccountCreateSchema()
@@ -52,18 +60,6 @@ def create_account() -> tuple[Response, int]:
                 403,
             )
         target_user_id = current_user_id
-
-    user = db.session.get(UserModel, target_user_id)
-    if user is None:
-        return (
-            jsonify(
-                {
-                    "error": "not_found",
-                    "message": f"User with id {target_user_id} not found",
-                }
-            ),
-            404,
-        )
 
     account = AccountModel(
         user_id=target_user_id,
@@ -123,18 +119,8 @@ def get_user_accounts(user_id: int) -> tuple[Response, int]:
                 404,
             )
 
-    user = db.session.get(UserModel, user_id)
-    if user is None:
-        return (
-            jsonify(
-                {
-                    "error": "not_found",
-                    "message": f"User with id {user_id} not found",
-                }
-            ),
-            404,
-        )
-    return jsonify(accounts_dto_schema.dump(user.accounts)), 200
+    accounts = AccountModel.query.filter_by(user_id=user_id).all()
+    return jsonify(accounts_dto_schema.dump(accounts)), 200
 
 
 @accounts_bp.route("/account/<int:account_id>/deposit", methods=["POST"])
