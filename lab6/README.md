@@ -32,13 +32,21 @@
 ## Скріншоти результатів
 
 ### 1. Перевірка працездатності усіх 8 контейнерів
+<img width="974" height="555" alt="изображение" src="https://github.com/user-attachments/assets/c33c2fbf-0da7-4dc8-9302-ed9f3b57bff5" />
+<img width="974" height="323" alt="изображение" src="https://github.com/user-attachments/assets/8865f120-49af-47f0-9a88-27f81c85dd1b" />
 
 ### 2. Успішний прогін автотестів `pytest` у консолі 
+<img width="974" height="293" alt="изображение" src="https://github.com/user-attachments/assets/e02f9451-b501-4df9-b7c2-71de19befbd0" />
 
 ### 3. Перевірка в Jaeger UI (`http://localhost:16686`)
+<img width="974" height="234" alt="изображение" src="https://github.com/user-attachments/assets/3b65d5d0-5b4c-49f2-98d2-2af4f08a421f" />
 
 ### 4. Кореляційні JSON-логи обох мікросервісів із прив'язкою `trace_id` та `span_id`
+<img width="974" height="304" alt="изображение" src="https://github.com/user-attachments/assets/05c33475-2771-45c4-9ba8-c79996881021" />
+<img width="974" height="285" alt="изображение" src="https://github.com/user-attachments/assets/54e4714a-b2a7-4859-898c-aedce690358f" />
 
 ### 5. Перевірка в Prometheus (`http://localhost:9090`)
+<img width="974" height="449" alt="изображение" src="https://github.com/user-attachments/assets/1a008a95-c707-40f9-99a0-50a1c7289e67" />
 
 ### 6. Перевірка в Grafana (`http://localhost:3000`)
+<img width="974" height="406" alt="изображение" src="https://github.com/user-attachments/assets/e41573be-0bcb-430b-a7ce-b258adf7eeae" />
