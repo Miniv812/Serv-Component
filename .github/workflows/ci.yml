@@ -54,7 +54,7 @@ jobs:
           flask --app user_service/run db upgrade -d user_service/migrations
           flask --app expense_service/run db upgrade -d expense_service/migrations
 
-      - name: Run Microservices Pytest Suite
+      - name: Run Microservices and Observability Pytest Suite
         env:
           TEST_USER_DATABASE_URL: postgresql+psycopg://postgres:postgres@localhost:5432/user_test_db
           TEST_EXPENSE_DATABASE_URL: postgresql+psycopg://postgres:postgres@localhost:5432/expense_test_db
@@ -62,12 +62,13 @@ jobs:
         run: |
           pytest --maxfail=1 --disable-warnings -v
 
+      - name: Validate Grafana Dashboard JSON and Docker Compose Stack
+        run: |
+          python -c "import json; json.load(open('monitoring/grafana/dashboards/expense_dashboard.json', encoding='utf-8'))"
+          docker compose config
+
       - name: Build Microservice Docker Images
         run: |
           docker build -f user_service/Dockerfile -t user-service:latest .
           docker build -f expense_service/Dockerfile -t expense-service:latest .
-
-      - name: Validate Docker Compose Configuration
-        run: |
-          docker compose config
-          
+        
