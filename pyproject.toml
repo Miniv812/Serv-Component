@@ -1,7 +1,18 @@
 [tool.ruff]
 line-length = 88
 target-version = "py311"
-exclude = ["**/migrations", "**/*_pb2.py", "**/*_pb2_grpc.py"]
+exclude = ["**/migrations", "**/*_pb2.py", "**/*_pb2.pyi", "**/*_pb2_grpc.py"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "W"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["proto", "user_app", "expense_app"]
+
+[tool.pytest.ini_options]
+pythonpath = [".", "user_service", "expense_service"]
+
+[tool.pyright]
+extraPaths = ["user_service", "expense_service"]
+reportCallIssue = false
+reportOptionalMemberAccess = false
