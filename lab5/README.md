@@ -18,11 +18,11 @@
 
 ## Виконані завдання
 
-1. **Мікросервісна декомпозиція:** монолітний застосунок розділено на два автономні сервіси (`user-service` та `expense-service`) із власними ізольованими базами даних PostgreSQL 16 (`user-db` та `expense-db`) та окремими міграціями Alembic у `docker-compose.yaml`[cite: 8].
-2. **Protobuf-контракт та gRPC-сервер:** створено специфікацію `proto/auth.proto` (`AuthService` із методами `ValidateToken` та `ValidateUser`), згенеровано Python-стаби через `grpcio-tools` і реалізовано gRPC-сервер на порту `50051` у `user-service`[cite: 8].
-3. **gRPC Interceptors (серверний та клієнтський):** реалізовано `RBACServerInterceptor` у `user-service` для перевірки JWT та ролей із gRPC Metadata (з поверненням `PERMISSION_DENIED` при порушенні прав) та `AuthClientInterceptor` у `expense-service` для автоматичного передавання `authorization: Bearer <token>`[cite: 8].
-4. **JSON-RPC 2.0 (`POST /rpc`):** реалізовано публічний ендпоінт `POST /rpc` в `expense-service` із підтримкою як поодиноких (`Single`), так і пакетних (`Batch`) запитів зі стандартними кодами помилок JSON-RPC 2.0 (`-32600`, `-32601`, `-32602`, `-32700`)[cite: 8].
-5. **Оновлення Bruno OpenCollection та CI:** додано запити для REST (обох сервісів), JSON-RPC 2.0 (Single + Batch) і gRPC, а також оновлено тести `pytest` та GitHub Actions CI[cite: 8].
+1. **Мікросервісна декомпозиція:** монолітний застосунок розділено на два автономні сервіси (`user-service` та `expense-service`) із власними ізольованими базами даних PostgreSQL 16 (`user-db` та `expense-db`) та окремими міграціями Alembic у `docker-compose.yaml`.
+2. **Protobuf-контракт та gRPC-сервер:** створено специфікацію `proto/auth.proto` (`AuthService` із методами `ValidateToken` та `ValidateUser`), згенеровано Python-стаби через `grpcio-tools` і реалізовано gRPC-сервер на порту `50051` у `user-service`.
+3. **gRPC Interceptors (серверний та клієнтський):** реалізовано `RBACServerInterceptor` у `user-service` для перевірки JWT та ролей із gRPC Metadata (з поверненням `PERMISSION_DENIED` при порушенні прав) та `AuthClientInterceptor` у `expense-service` для автоматичного передавання `authorization: Bearer <token>`.
+4. **JSON-RPC 2.0 (`POST /rpc`):** реалізовано публічний ендпоінт `POST /rpc` в `expense-service` із підтримкою як поодиноких (`Single`), так і пакетних (`Batch`) запитів зі стандартними кодами помилок JSON-RPC 2.0 (`-32600`, `-32601`, `-32602`, `-32700`).
+5. **Оновлення Bruno OpenCollection та CI:** додано запити для REST (обох сервісів), JSON-RPC 2.0 (Single + Batch) і gRPC, а також оновлено тести `pytest` та GitHub Actions CI.
 
 ## Скріншоти результатів
 
