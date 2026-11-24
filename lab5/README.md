@@ -45,3 +45,4 @@
 <img width="974" height="202" alt="изображение" src="https://github.com/user-attachments/assets/ceaab7f0-11ca-466c-bc23-c8dac1e73d3d" />
 <img width="974" height="213" alt="изображение" src="https://github.com/user-attachments/assets/879e9132-aad0-476b-b320-3b407ac9f0ce" />
 <img width="974" height="261" alt="изображение" src="https://github.com/user-attachments/assets/63ddfebc-4260-404d-b7a1-db54eac21000" />
+
