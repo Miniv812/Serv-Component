@@ -45,6 +45,7 @@ jobs:
 
       - name: Create Isolated Databases and Run Migrations
         env:
+          PYTHONPATH: .
           USER_DATABASE_URL: postgresql+psycopg://postgres:postgres@localhost:5432/user_test_db
           EXPENSE_DATABASE_URL: postgresql+psycopg://postgres:postgres@localhost:5432/expense_test_db
           JWT_SECRET_KEY: test-ci-secret-key
